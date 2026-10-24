@@ -58,7 +58,7 @@ def add_registry(out, dirname, *, module_name, module_version, module_file, url,
     with open(module_file) as f:
         module_declaration = f.readlines()
     module_declaration_with_version = [
-        'module(name = "intellij_aspect", version = %r, compatibility_level = 1)' % (module_version,)
+        'module(name = %r, version = %r, compatibility_level = 1)' % (module_name, module_version)
         if line.startswith("module") else line
         for line in module_declaration
     ]

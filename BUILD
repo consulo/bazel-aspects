@@ -6,7 +6,7 @@ load("@rules_pkg//pkg:pkg.bzl", "pkg_tar", "pkg_zip")
 load("//modules:module.bzl", "intellij_module")
 load("//private/rules:local_registry.bzl", "local_registry")
 
-BCR_NAME = "intellij_aspect"
+BCR_NAME = "consulo_aspect"
 
 BCR_VERSION = "0.0.1"
 

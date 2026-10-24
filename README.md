@@ -1,5 +1,10 @@
 # IntelliJ Aspect
 
+> **Consulo fork** of [JetBrains/intellij-aspect](https://github.com/JetBrains/intellij-aspect). The published module
+> is named **`consulo_aspect`** (upstream: `intellij_aspect`), so both can be resolved side by side; the aspect itself
+> keeps its name (`//config:aspect.bzl%intellij_aspect`) and writes the same `ide_info.proto` textprotos. Our own
+> proto fields use numbers 1000 and up.
+
 A modular, non-templated Bazel aspect framework for IntelliJ IDE integration. The key design change 
 is splitting language/toolchain logic into independent **modules** that each contribute a function 
 that produces a dedicated struct that are then aggregated to a single textproto per target for IDE 
@@ -44,7 +49,7 @@ These support three deployment modes:
 
 **BCR** -- The aspect is fetched from the BCR as a regular `bazel_dep`. This is the
 intended default. It requires the user to add
-`bazel_dep(name = "intellij_aspect", version = "...")` to their `MODULE.bazel`.
+`bazel_dep(name = "consulo_aspect", version = "...")` to their `MODULE.bazel`.
 
 **Materialized** -- The aspect sources are written directly into the workspace (like the
 old aspect). This requires limited templating (rewriting load statements, generating a
@@ -63,13 +68,13 @@ The repository contains two Bazel modules:
   extensions needed to build, test, and package the aspect. This is what you work with when
   developing.
 
-- **`intellij_aspect`** (`MODULE.bazel.bcr`) -- The published module. It declares only the
+- **`consulo_aspect`** (`MODULE.bazel.bcr`) -- The published module. It declares only the
   runtime rule-set dependencies needed by the aspect itself (rules_cc, rules_python,
   rules_java) with `max_compatibility_level` set high as high as possible to allow version 
   flexibility. This is what users depend on.
 
 When building `archive_bcr`, `MODULE.bazel.bcr` is renamed to `MODULE.bazel` inside the
-archive, so consumers see a clean `intellij_aspect` module.
+archive, so consumers see a clean `consulo_aspect` module.
 
 ## Modules
 

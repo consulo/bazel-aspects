@@ -40,8 +40,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
+// name of the published module, BCR_NAME in //:BUILD
+private const val ASPECT_MODULE_NAME = "consulo_aspect"
+
 private val ASPECT_PREFIX = mapOf(
-  AspectDeployment.BCR to "@intellij_aspect//",
+  AspectDeployment.BCR to "@$ASPECT_MODULE_NAME//",
   AspectDeployment.MATERIALIZED to "//aspect/default/",
   AspectDeployment.BUILTIN to "//aspect/builtin/",
 )
@@ -184,8 +187,8 @@ fun Sandbox.writeModules(modules: List<BazelModule>, aspect: Path? = null) {
     }
 
     if (aspect != null) {
-      writer.appendLine("bazel_dep(name = 'intellij_aspect')")
-      writer.appendLine("local_path_override(module_name = 'intellij_aspect', path = '${asBazelPath(aspect)}')")
+      writer.appendLine("bazel_dep(name = '$ASPECT_MODULE_NAME')")
+      writer.appendLine("local_path_override(module_name = '$ASPECT_MODULE_NAME', path = '${asBazelPath(aspect)}')")
     }
   }
 
