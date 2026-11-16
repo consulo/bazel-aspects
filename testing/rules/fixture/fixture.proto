@@ -44,6 +44,7 @@ enum RuleSet {
     LEGACY_RULES_PROTO = 7;
     PLATFORMS = 9;
     RUST = 1000; // Consulo fork
+    DOTNET = 1001; // Consulo fork
 }
 
 message TestConfig {

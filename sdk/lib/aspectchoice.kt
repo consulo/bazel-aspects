@@ -25,6 +25,7 @@ enum class Rules(internal val rulesetName: String) {
   SCALA("@rules_scala"),
   GO("@rules_go"),
   RUST("@rules_rust"), // Consulo fork
+  DOTNET("@rules_dotnet"), // Consulo fork
   PROTO("@protobuf"),
   LEGACY_RULES_PROTO("@rules_proto"),
   PLATFORMS("@platforms"),

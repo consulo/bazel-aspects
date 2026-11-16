@@ -129,6 +129,12 @@ test_module_deps(
     ],
 )
 
+# Consulo fork: rules_dotnet for modules/dotnet_info.bzl
+test_module_deps(
+    module_name = "rules_dotnet",
+    versions = ["0.22.2"],
+)
+
 test_module_deps(
     module_name = "platforms",
     versions = ["1.1.0"],

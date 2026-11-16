@@ -1,0 +1,13 @@
+load("@rules_dotnet//dotnet:defs.bzl", "csharp_library")
+
+csharp_library(
+    name = "greeter",
+    srcs = ["Greeter.cs"],
+    allow_unsafe_blocks = True,
+    defines = ["GREETER"],
+    internals_visible_to = ["app"],
+    langversion = "12.0",
+    nullable = "enable",
+    target_frameworks = ["net8.0"],
+    visibility = ["//visibility:public"],
+)

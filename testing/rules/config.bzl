@@ -19,7 +19,7 @@ TestConfig = provider(
     fields = {
         "bazel": "str - Bazel version string (e.g., 8.6.0).",
         "modules": "list[TestModuleDep] - List of BCR modules the fixture depends upon.",
-        "rule_sets": "list[str] - rule sets (cc, foreign_cc, python, java, kotlin, scala, go, rust, proto, legacy_rules_proto, platforms) for which the aspects should be used when building the fixture.",
+        "rule_sets": "list[str] - rule sets (cc, foreign_cc, python, java, kotlin, scala, go, rust, dotnet, proto, legacy_rules_proto, platforms) for which the aspects should be used when building the fixture.",
         "aspect_deployment": "str - Aspect deployment option (bcr, materialized, builtin).",
         "drop_no_ide": "bool - Wheter to pass drop_no_ide to the asepct defintion.",
     },
@@ -78,6 +78,7 @@ def serialize_test_config(config):
         "foreign_cc": 8,
         "platforms": 9,
         "rust": 1000,  # Consulo fork
+        "dotnet": 1001,  # Consulo fork
     }
 
     return struct(
@@ -149,7 +150,7 @@ test_matrix = rule(
         ),
         "rule_sets": attr.string_list(
             mandatory = True,
-            doc = "list of rule_sets (cc, foreign_cc, python, java, kotlin, scala, go, rust, proto, legacy_rules_proto, platforms) for which the respective module aspects should be used",
+            doc = "list of rule_sets (cc, foreign_cc, python, java, kotlin, scala, go, rust, dotnet, proto, legacy_rules_proto, platforms) for which the respective module aspects should be used",
         ),
         "aspect_deployment": attr.string(
             default = "bcr",
