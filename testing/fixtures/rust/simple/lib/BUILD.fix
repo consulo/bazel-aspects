@@ -1,0 +1,10 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "lib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    proc_macro_deps = ["//answer_macro"],
+    version = "1.2.3",
+    visibility = ["//visibility:public"],
+)

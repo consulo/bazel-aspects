@@ -19,7 +19,7 @@ TestConfig = provider(
     fields = {
         "bazel": "str - Bazel version string (e.g., 8.6.0).",
         "modules": "list[TestModuleDep] - List of BCR modules the fixture depends upon.",
-        "rule_sets": "list[str] - rule sets (cc, python, java, kotlin, scala, go, proto, legacy_rules_proto) for which the aspects should be used when building the fixture.",
+        "rule_sets": "list[str] - rule sets (cc, python, java, kotlin, scala, go, rust, proto, legacy_rules_proto) for which the aspects should be used when building the fixture.",
         "aspect_deployment": "str - Aspect deployment option (bcr, materialized, builtin).",
     },
 )
@@ -72,6 +72,7 @@ def serialize_test_config(config):
         "proto": 6,
         "legacy_rules_proto": 7,
         "foreign_cc": 8,
+        "rust": 9,
     }
 
     return struct(
@@ -141,7 +142,7 @@ test_matrix = rule(
         ),
         "rule_sets": attr.string_list(
             mandatory = True,
-            doc = "list of rule_sets (cc, python, java, kotlin, scala, go, proto, legacy_rules_proto) for which the respective module aspects should be used",
+            doc = "list of rule_sets (cc, python, java, kotlin, scala, go, rust, proto, legacy_rules_proto) for which the respective module aspects should be used",
         ),
         "aspect_deployment": attr.string(
             default = "bcr",

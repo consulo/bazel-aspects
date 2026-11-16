@@ -120,6 +120,15 @@ test_module_deps(
     ],
 )
 
+# Consulo fork: rules_rust for modules/rust_info.bzl
+test_module_deps(
+    module_name = "rules_rust",
+    versions = [
+        "0.59.2",
+        "0.74.0",
+    ],
+)
+
 test_module_deps(
     module_name = "apple_support",
     versions = ["2.9.0"],
