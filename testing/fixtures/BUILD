@@ -10,7 +10,7 @@ test_module_deps(
     versions = [
         "0.1.1",
         "0.2.9",
-        "0.2.26",
+        "0.2.27",
     ],
 )
 
@@ -104,7 +104,7 @@ test_module_deps(
         "1.6.3",
         "1.9.0",
         "2.3.4",
-        "2.4.2",
+        "2.4.5",
     ],
 )
 
@@ -116,7 +116,7 @@ test_module_deps(
     module_name = "rules_go",
     versions = [
         "0.49.0",
-        "0.64.2",
+        "0.65.0",
     ],
 )
 
@@ -130,8 +130,13 @@ test_module_deps(
 )
 
 test_module_deps(
+    module_name = "platforms",
+    versions = ["1.1.0"],
+)
+
+test_module_deps(
     module_name = "apple_support",
-    versions = ["2.9.0"],
+    versions = ["2.10.1"],
 )
 
 _TOOLCHAINS_LLVM_CONFIG = """

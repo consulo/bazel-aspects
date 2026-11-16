@@ -29,6 +29,7 @@ import org.junit.runners.JUnit4
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.readLines
 
 private val RUNFILES = Runfiles.preload()
 
@@ -56,6 +57,10 @@ class DeployTest {
     return Files.newInputStream(root.resolve(file)).use(::parseLoads)
   }
 
+  private fun readLines(root: Path, file: String): List<String> {
+    return root.resolve(file).readLines()
+  }
+
   @Test
   fun testDeployDefault() {
     val path = deployArchive(
@@ -70,6 +75,34 @@ class DeployTest {
     val repos = readLoads(path, "modules/cc_info.bzl").map { it.repository }
     assertThat(repos).contains(Repository.External("@rules_cc"))
     assertThat(repos).contains(Repository.Absolute)
+
+    val aspectLoads = readLoads(path, "config/aspect.bzl")
+    assertThat(aspectLoads).contains(
+      LoadStatement(Repository.Absolute, "aspect/location/intellij:aspect.bzl", "\"intellij_configure_aspect\""),
+    )
+    assertThat(aspectLoads.map { it.path }).contains("aspect/location/modules:cc_info.bzl")
+    assertThat(aspectLoads.map { it.path }).doesNotContain("aspect/location/modules:cc_debug_info.bzl")
+
+    val debugAspectLoads = readLoads(path, "config/cc_debug_aspect.bzl")
+    assertThat(debugAspectLoads.map { it.path }).contains("aspect/location/modules:cc_debug_info.bzl")
+    assertThat(debugAspectLoads.map { it.path }).doesNotContain("aspect/location/modules:cc_info.bzl")
+  }
+
+  @Test
+  fun testDeployDebugAspectWithoutCc() {
+    val path = deployArchive(
+      AspectConfig(
+        bazelVersion = "8.5.0",
+        repoMapping = emptyMap(),
+        useBuiltin = emptySet(),
+        rulesets = setOf(Rules.JAVA),
+      ),
+    )
+
+    // the debug aspect is always deployed, even if it has no modules
+    val content = Files.readString(path.resolve("config/cc_debug_aspect.bzl"))
+    assertThat(content).contains("intellij_cc_debug_aspect = intellij_configure_aspect(")
+    assertThat(content).doesNotContain("cc_debug_info")
   }
 
   @Test
@@ -123,5 +156,75 @@ class DeployTest {
     val repos = readLoads(path, "modules/cc_info.bzl").map { it.repository }
     assertThat(repos).contains(Repository.External("@my_rules_cc"))
     assertThat(repos).doesNotContain(Repository.External("@rules_cc"))
+  }
+
+  @Test
+  fun testDeployPlatformsDefault() {
+    val path = deployArchive(
+      AspectConfig(
+        bazelVersion = "8.5.0",
+        repoMapping = emptyMap(),
+        useBuiltin = emptySet(),
+        rulesets = setOf(Rules.CC, Rules.PLATFORMS),
+      ),
+    )
+
+    val content = Files.readString(path.resolve("modules/platform_info.bzl"))
+    assertThat(content).contains("@platforms//os:linux")
+    assertThat(content).contains("@platforms//cpu:x86_64")
+
+    val debugAspectLoads = readLoads(path, "config/cc_debug_aspect.bzl")
+    assertThat(debugAspectLoads.map { it.path }).contains("aspect/location/modules:platform_info.bzl")
+  }
+
+  @Test
+  fun testDeployPlatformsRepoMapping() {
+    val path = deployArchive(
+      AspectConfig(
+        bazelVersion = "8.5.0",
+        repoMapping = mapOf(Rules.PLATFORMS to "@@platforms+"),
+        useBuiltin = emptySet(),
+        rulesets = setOf(Rules.PLATFORMS),
+      ),
+    )
+
+    val content = Files.readString(path.resolve("modules/platform_info.bzl"))
+    assertThat(content).contains("@@platforms+//os:macos")
+    assertThat(content).contains("@@platforms+//cpu:aarch64")
+    assertThat(content).doesNotContain("\"@platforms//")
+  }
+
+  @Test
+  fun testDeployPlatformsBuiltin() {
+    val path = deployArchive(
+      AspectConfig(
+        bazelVersion = "8.5.0",
+        repoMapping = emptyMap(),
+        useBuiltin = setOf(Rules.PLATFORMS),
+        rulesets = setOf(Rules.PLATFORMS),
+      ),
+    )
+
+    val content = Files.readString(path.resolve("modules/platform_info.bzl"))
+    assertThat(content).contains("@@platforms//os:linux")
+    assertThat(content).doesNotContain("\"@platforms//")
+  }
+
+  @Test
+  fun testScalaToolchainRewrite() {
+    val path = deployArchive(
+      AspectConfig(
+        bazelVersion = "8.5.0",
+        repoMapping = mapOf(Rules.SCALA to "@io_bazel_rules_scala"),
+        useBuiltin = emptySet(),
+        rulesets = setOf(Rules.CC),
+      ),
+    )
+    val lines = readLines(path, "modules/scala_info.bzl")
+    val toolchainDeclarations = lines.filter { it.startsWith("SCALA_TOOLCHAIN") }
+    assertThat(toolchainDeclarations.size).isEqualTo(1)
+    val declaration = toolchainDeclarations.first()
+    assertThat(declaration).contains("@io_bazel_rules_scala")
+    assertThat(declaration).doesNotContain("@rules_scala")
   }
 }

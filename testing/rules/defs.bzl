@@ -69,6 +69,7 @@ def test_fixture(
         bcr = True,
         strip_prefix = "",
         use_msys2 = False,
+        drop_no_ide = False,
         extra_flags = [],
         **kwargs):
     """Creates a test fixture with the result of the IntelliJ aspect applied to the project.
@@ -88,13 +89,15 @@ def test_fixture(
         outputs: Which outputs to collect. "info" (the default) only requests the
             intellij-info output group, "build" also requests intellij-build and
             "capture" additionally stores the content of all generated files
-            (`*.intellij-generated-*`) in the fixture.
+            (`*.intellij-generated-*`) in the fixture. "debug" runs the cc debug
+            aspect instead and requests intellij-info and intellij-debug.
         builtin: If True, also tests the builtin aspect deployment mode.
         bcr: If True (the default) also test the BCR deployment mode.
         strip_prefix: Optional. Prefix to strip from source file paths when creating
             the project archive. Defaults to the fixture name if not specified.
         use_msys2: If True, the BAZEL_SH environment variable is forwarded from the host
             to the nested Bazel invocations.
+        drop_no_ide: If True, define the aspect to drop no-ide targets; disables BCR deployment.
         extra_flags: Additional flags passed to the Bazel build.
 
     Example:
@@ -109,6 +112,7 @@ def test_fixture(
             targets = ["//:main"],
         )
     """
+    bcr = bcr and (not drop_no_ide)
     bazel_versions = _resolve_bazel_spec(bazel)
     matrix_name = name + "_matrix"
     configs = []
@@ -120,6 +124,7 @@ def test_fixture(
             bazel = bazel_versions,
             modules = modules,
             aspect_deployment = "materialized",
+            drop_no_ide = drop_no_ide,
             visibility = ["//visibility:private"],
             testonly = 1,
         )
@@ -132,6 +137,7 @@ def test_fixture(
             bazel = bazel_versions,
             modules = modules,
             aspect_deployment = "bcr",
+            drop_no_ide = drop_no_ide,
             visibility = ["//visibility:private"],
             testonly = 1,
         )
@@ -144,6 +150,7 @@ def test_fixture(
             bazel = bazel_versions,
             modules = modules,
             aspect_deployment = "builtin",
+            drop_no_ide = drop_no_ide,
             visibility = ["//visibility:private"],
             testonly = 1,
         )
@@ -224,7 +231,7 @@ def test_runner(test, fixture, deps = None, env = None, test_name = None, **kwar
         **kwargs
     )
 
-def junit_test(test, deps = None, **kwargs):
+def junit_test(test, deps = None, associates = None, **kwargs):
     """Creates a JUnit4 test. All JUnit dependencies are provided."""
     name = test.removesuffix(".kt")
 
@@ -235,6 +242,7 @@ def junit_test(test, deps = None, **kwargs):
             "@maven//:junit_junit",
             "@maven//:com_google_truth_truth",
         ],
+        associates = associates or [],
         visibility = ["//visibility:private"],
         testonly = 1,
     )

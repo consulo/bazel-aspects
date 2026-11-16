@@ -42,7 +42,8 @@ enum RuleSet {
     GO = 5;
     PROTO = 6;
     LEGACY_RULES_PROTO = 7;
-    RUST = 9; // Consulo fork
+    PLATFORMS = 9;
+    RUST = 1000; // Consulo fork
 }
 
 message TestConfig {
@@ -50,6 +51,7 @@ message TestConfig {
   repeated RuleSet rule_sets = 2;
   AspectDeployment aspect_deployment = 3;
   string bazel_version = 4;
+  bool drop_no_ide = 5;
 }
 
 message OutputGroup {

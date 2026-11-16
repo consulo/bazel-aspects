@@ -1,24 +1,14 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
-load("//config:aspect.bzl", "MODULES")
-load("//modules:rules_proto_info.bzl", rules_proto_info = "module")
-load("//private/rules:kt_aspect_enum.bzl", "kt_aspect_enum")
+load("//private/rules:java_resource_jar.bzl", "java_resource_jar")
 
-# Package archive_ide.zip into a jar with the file at the jar root.
-#
-# The in-jar resource path breaks when consumed as an external repo, so
-# resources/resource_strip_prefix can't be used and a workaround is needed.
-genrule(
-    name = "sdk_resource_jar",
-    srcs = ["//:archive_ide"],
-    outs = ["sdk_resource.jar"],
-    cmd = "$(execpath @bazel_tools//tools/zip:zipper) c $@ archive_ide.zip=$(execpath //:archive_ide)",
-    tools = ["@bazel_tools//tools/zip:zipper"],
-)
-
-kt_aspect_enum(
-    name = "aspectenum",
-    modules = MODULES + [rules_proto_info],  # legacy rules proto are not supported for BCR depolyment
-    package = "com.intellij.aspect.lib",
+# Package archive_ide.zip and the aspect definitions into a jar, every file at its relative path.
+java_resource_jar(
+    name = "sdk_resource",
+    srcs = [
+        "//:archive_ide",
+        "//config:aspect_ide.textproto",
+        "//config:cc_debug_aspect.textproto",
+    ],
 )
 
 kt_jvm_library(
@@ -26,15 +16,20 @@ kt_jvm_library(
     srcs = [
         "aspectchoice.kt",
         "config.kt",
+        "definition.kt",
         "deploy.kt",
         "loads.kt",
         "transformers.kt",
         "utils.kt",
-        ":aspectenum",
     ],
-    resource_jars = [":sdk_resource_jar"],
+    resource_jars = [":sdk_resource"],
     visibility = ["//visibility:public"],
-    deps = ["//private/lib:path"],
+    deps = [
+        "//private/lib:path",
+        "//private/lib:proto",
+        "//sdk/proto:aspect_java_proto",
+        "@protobuf//:protobuf_java",
+    ],
 )
 
 kt_jvm_library(

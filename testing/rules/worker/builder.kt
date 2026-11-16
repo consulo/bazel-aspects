@@ -18,8 +18,9 @@ package com.intellij.aspect.testing.rules.worker
 import com.google.devtools.intellij.ideinfo.IntellijIdeInfo.TargetIdeInfo
 import com.google.protobuf.ByteString
 import com.google.protobuf.TextFormat
-import com.intellij.aspect.lib.ASPECT_NAME
 import com.intellij.aspect.lib.AspectConfig
+import com.intellij.aspect.lib.INTELLIJ_ASPECT
+import com.intellij.aspect.lib.INTELLIJ_CC_DEBUG_ASPECT
 import com.intellij.aspect.lib.OutputGroups
 import com.intellij.aspect.lib.Rules
 import com.intellij.aspect.lib.deployAspectZip
@@ -63,6 +64,7 @@ private val RULES = mapOf(
   RuleSet.RUST to Rules.RUST,
   RuleSet.PROTO to Rules.PROTO,
   RuleSet.LEGACY_RULES_PROTO to Rules.LEGACY_RULES_PROTO,
+  RuleSet.PLATFORMS to Rules.PLATFORMS,
 )
 
 fun main(args: Array<String>) {
@@ -82,22 +84,28 @@ fun main(args: Array<String>) {
 
       AspectDeployment.MATERIALIZED -> {
         writeModules(input.config.modulesList)
-        deployIdeAspect(version, rulesets, useBuiltin = false)
+        deployIdeAspect(version, rulesets, useBuiltin = false, dropNoIde = input.config.dropNoIde)
       }
 
       AspectDeployment.BUILTIN -> {
         writeModules(input.config.modulesList)
-        deployIdeAspect(version, rulesets, useBuiltin = true)
+        deployIdeAspect(version, rulesets, useBuiltin = true, dropNoIde = input.config.dropNoIde)
       }
 
       else -> throw IllegalArgumentException("unknown aspect deployment: $deployment")
     }
 
+    val aspect = when (input.outputs) {
+      Outputs.DEBUG -> INTELLIJ_CC_DEBUG_ASPECT
+      else -> INTELLIJ_ASPECT
+    }
+
     val files = build(
       targets = input.targetsList,
-      aspects = listOf(ASPECT_PREFIX.getValue(deployment) + ASPECT_NAME),
+      aspects = listOf(ASPECT_PREFIX.getValue(deployment) + aspect.location),
       outputGroups = when (input.outputs) {
         Outputs.INFO -> listOf(OutputGroups.INFO.groupName)
+        Outputs.DEBUG -> listOf(OutputGroups.INFO.groupName, OutputGroups.DEBUG.groupName)
         else -> listOf(OutputGroups.INFO.groupName, OutputGroups.BUILD.groupName)
       },
       profile = Path.of(input.outputProfile),
@@ -158,12 +166,18 @@ private fun Sandbox.deployBcrAspect(archive: String): Path {
 }
 
 @Throws(IOException::class)
-private fun Sandbox.deployIdeAspect(bazelVersion: String, rulesets: Set<Rules>, useBuiltin: Boolean) {
+private fun Sandbox.deployIdeAspect(
+  bazelVersion: String,
+  rulesets: Set<Rules>,
+  useBuiltin: Boolean,
+  dropNoIde: Boolean,
+) {
   val config = AspectConfig(
     bazelVersion = bazelVersion,
     repoMapping = emptyMap(),
     useBuiltin = if (useBuiltin) Rules.entries.toSet() else emptySet(),
     rulesets = rulesets,
+    dropNoIde = dropNoIde,
   )
 
   val subdir = if (useBuiltin) "builtin" else "default"

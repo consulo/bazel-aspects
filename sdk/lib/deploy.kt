@@ -28,25 +28,10 @@ import kotlin.io.path.extension
  */
 private const val BUNDLED_ASPECT = "/archive_ide.zip"
 
-data class AspectConfig(
-  /**
-   * The Bazel version written into the config file.
-   */
-  val bazelVersion: String,
-  /**
-   * A mapping from default repo names to a specific replacement e.g., canonical repo name.
-   */
-  val repoMapping: Map<Rules, String>,
-  /**
-   * Languages for which to use the builtin rule, i.e., for which to strip rule set loads.
-   */
-  val useBuiltin: Set<Rules>,
-  /**
-   * Rule sets for which information will be requested when running the aspect. If null, take
-   * all Rules mentioned in the repoMapping or useBuiltin.
-   */
-  val rulesets: Set<Rules>? = null,
-)
+/**
+ * Canonical name of the platforms module repository, Bazel does not add a version suffix.
+ */
+private const val PLATFORMS_CANONICAL_NAME = "@@platforms"
 
 /**
  * Deploy an aspect archive to a workspace directory.
@@ -86,6 +71,13 @@ fun deployAspectZip(
   }
   if (Rules.SCALA in config.repoMapping) {
     transformers.add(TransformScalaToolchainType(config.repoMapping.getValue(Rules.SCALA)))
+  }
+
+  if (Rules.PLATFORMS in config.repoMapping) {
+    transformers.add(TransformPlatformsRepository(config.repoMapping.getValue(Rules.PLATFORMS)))
+  } else if (Rules.PLATFORMS in config.useBuiltin) {
+    // the platforms module is always part of the dependency graph and has a fixed canonical name
+    transformers.add(TransformPlatformsRepository(PLATFORMS_CANONICAL_NAME))
   }
 
   transformers.add(TransformBuiltinRules(config.useBuiltin))

@@ -28,7 +28,7 @@ design also enables publishing to the **Bazel Central Registry (BCR)**.
 intellij/       Main aggregator aspect (intellij_info_aspect)
 modules/        Language & toolchain module aspects (cc, java, python, ...)
 common/         Shared utilities (dependencies, artifact locations, IDE info serialization)
-config/         Configuration system (Bazel version detection via repository rule)
+config/         Configuration system (Bazel version detection via repository rule, module list and generated aspect configuration)
 sdk/            Public API: Kotlin deploy helpers and protobuf definitions
 testing/        Test infrastructure (fixtures, rules, workers)
 tools/          CLI utilities (deploy, measure, format)
@@ -76,6 +76,15 @@ The repository contains two Bazel modules:
 When building `archive_bcr`, `MODULE.bazel.bcr` is renamed to `MODULE.bazel` inside the
 archive, so consumers see a clean `consulo_aspect` module.
 
+The public API of the SDK is tracked in [`testing/tests/sdk/api.txt`](testing/tests/sdk/api.txt).
+The test `//testing/tests/sdk:api_test` fails whenever the symbols of `//sdk` differ from that
+file, so every API change has to be made explicit by updating the fixture:
+
+```sh
+bazel build //testing/tests/sdk:api_dump
+install -m 644 bazel-bin/testing/tests/sdk/api_dump.txt testing/tests/sdk/api.txt
+```
+
 ## Modules
 
 Each language or toolchain gets its own aspect in `modules/` that
@@ -84,9 +93,22 @@ main aspect that actually walks the target graph. The results of
 those function calls can contribute to the overall result for the
 respective target.
 
+## Aspects
+
+The modules are combined into two aspects, configured in [`config/BUILD`](config/BUILD).
+The SDK bundles both as `INTELLIJ_ASPECT` and `INTELLIJ_CC_DEBUG_ASPECT`.
+
+- **`config:aspect.bzl%intellij_aspect`** -- The sync aspect, running all language modules.
+- **`config:cc_debug_aspect.bzl%intellij_cc_debug_aspect`** -- The debug aspect for C and C++
+  targets. It runs `cc_debug_info`, which reports the compile and link command lines of
+  each target and fills the `intellij-debug` output group, and `platform_info`, which reports
+  the OS and CPU architecture of the target platform.
+
+Both aspects provide `IntelliJInfo`, so one build must only run one of them.
+
 ## Output groups
 
-The aspect defines three output groups.
+The aspects define four output groups.
 
 - **`intellij-info`** -- The output group containing the text-proto
   files with the IDE-relevant information on the targets used,
@@ -95,6 +117,12 @@ The aspect defines three output groups.
 - **`intellij-build`** -- The output group with generated files
   needed for full indexing of the project, typically generated
   sources, e.g., by the the protobuf compiler.
+
+- **`intellij-debug`** -- The output group of the debug aspect with
+  the files the debugger reads: object files and archives (OSO on
+  macOS), `.dwp` files with fission, `.pdb` files with MSVC and
+  `.dSYM` bundles. Requesting it under `--remote_download_toplevel`
+  ensures that these files are available on disk.
 
 - **`intellij-sync`** -- An output group with relevant files that
   are sources in the sense of bazel. This group is mainly for
